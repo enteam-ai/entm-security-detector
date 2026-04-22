@@ -1,0 +1,54 @@
+name: Build installers
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact_name: enteam-interview-monitor-windows
+            make_script: make:win
+          - os: macos-latest
+            artifact_name: enteam-interview-monitor-macos
+            make_script: make:mac
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build installer
+        run: npm run ${{ matrix.make_script }}
+        env:
+          # Disable code signing for unsigned demo builds.
+          # Add APPLE_ID / APPLE_ID_PASSWORD / APPLE_TEAM_ID + WINDOWS_CERT_* secrets
+          # later to enable signing and notarization.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: |
+            out/make/**/*.exe
+            out/make/**/*.dmg
+            out/make/**/*.zip
+          if-no-files-found: warn
+          retention-days: 30
