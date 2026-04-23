@@ -3,7 +3,15 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 
 module.exports = {
   packagerConfig: {
-    asar: true,
+    // ps-list and active-win are marked as webpack externals (see
+    // webpack.main.config.js) so webpack emits runtime require() calls for
+    // them. Those requires only resolve if the modules are physically on
+    // disk — asar.unpack extracts their node_modules paths to
+    // app.asar.unpacked/ where Node's resolver can find them. Also needed
+    // for active-win's bin/ helper binaries that it execs at runtime.
+    asar: {
+      unpack: '**/node_modules/{ps-list,active-win,@sindresorhus/is-plain-object,pidtree}/**',
+    },
     name: 'Enteam Interview Monitor',
     executableName: 'enteam-interview-monitor',
     appBundleId: 'com.enteam.interviewmonitor',
