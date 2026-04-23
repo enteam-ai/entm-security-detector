@@ -42,13 +42,54 @@ jobs:
           # later to enable signing and notarization.
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
+      - name: Collect installers
+        shell: bash
+        run: |
+          mkdir -p dist
+          find out/make -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.zip" \) -exec cp {} dist/ \;
+          ls -la dist
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: |
-            out/make/**/*.exe
-            out/make/**/*.dmg
-            out/make/**/*.zip
+          path: dist/*
           if-no-files-found: warn
           retention-days: 30
+
+  release:
+    name: Publish rolling latest release
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Flatten artifacts
+        run: |
+          mkdir -p release
+          find artifacts -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.zip" \) -exec cp {} release/ \;
+          ls -la release
+
+      - name: Publish to "latest" prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest build
+          prerelease: true
+          body: |
+            Rolling prerelease built from `main` at ${{ github.sha }}.
+
+            Downloads:
+            - **Windows**: `Enteam-Interview-Monitor-Setup.exe`
+            - **macOS (Apple Silicon)**: `*-arm64.dmg`
+            - **macOS (Intel)**: `*-x64.dmg`
+
+            These are unsigned demo builds. On macOS you may need to
+            right-click → Open the first time to bypass Gatekeeper.
+          files: release/*
