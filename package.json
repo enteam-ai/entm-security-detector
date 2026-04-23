@@ -40,8 +40,8 @@
     "style-loader": "^3.3.4"
   },
   "dependencies": {
-    "active-win": "^8.2.1",
+    "active-win": "^7.7.1",
     "electron-squirrel-startup": "^1.0.1",
-    "ps-list": "^9.0.0"
+    "ps-list": "^7.2.0"
   }
 }

@@ -17,18 +17,12 @@ const BLOCKLIST = [
   { needle: 'calc',      display: '[TEST] Calculator' },
 ];
 
-let psListPromise;
-let activeWinPromise;
-
-function loadPsList() {
-  if (!psListPromise) psListPromise = import('ps-list').then(m => m.default);
-  return psListPromise;
-}
-
-function loadActiveWin() {
-  if (!activeWinPromise) activeWinPromise = import('active-win').then(m => m);
-  return activeWinPromise;
-}
+// ps-list@7 and active-win@7 are CommonJS — required directly so webpack
+// bundles them into the asar. v8+ of both packages are ESM-only, which
+// doesn't round-trip cleanly through webpack + asar (see CJS→require
+// required for packaged builds).
+const psList = require('ps-list');
+const activeWin = require('active-win');
 
 function matchBlocklist(haystack) {
   if (!haystack) return null;
@@ -40,7 +34,6 @@ function matchBlocklist(haystack) {
 }
 
 async function scanProcesses() {
-  const psList = await loadPsList();
   const procs = await psList();
   const hits = [];
   for (const p of procs) {
@@ -54,7 +47,6 @@ async function scanProcesses() {
 
 async function scanWindows() {
   try {
-    const activeWin = await loadActiveWin();
     if (typeof activeWin.getOpenWindows !== 'function') return [];
     const windows = await activeWin.getOpenWindows();
     const hits = [];
