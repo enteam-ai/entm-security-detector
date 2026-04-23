@@ -27,10 +27,12 @@ module.exports = {
       },
     },
     // macOS installer: drag-to-Applications .dmg
+    // No explicit `name` — forge defaults to a per-arch filename
+    // (Enteam Interview Monitor-1.0.0-arm64.dmg etc.) so the x64 and arm64
+    // makers don't collide on the same output path.
     {
       name: '@electron-forge/maker-dmg',
       config: {
-        name: 'Enteam-Interview-Monitor',
         format: 'ULFO',
       },
     },
