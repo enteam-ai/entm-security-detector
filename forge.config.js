@@ -3,14 +3,17 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 
 module.exports = {
   packagerConfig: {
-    // ps-list and active-win are marked as webpack externals (see
-    // webpack.main.config.js) so webpack emits runtime require() calls for
-    // them. Those requires only resolve if the modules are physically on
-    // disk — asar.unpack extracts their node_modules paths to
-    // app.asar.unpacked/ where Node's resolver can find them. Also needed
-    // for active-win's bin/ helper binaries that it execs at runtime.
+    // Combined unpack pattern:
+    // - **/*.node — any native addon (replaces plugin-auto-unpack-natives,
+    //   which is now removed from plugins because it OVERRIDES this field
+    //   with its own pattern in packageAfterCopy, wiping our entries)
+    // - node_modules/{ps-list,active-win}/** — packages marked as webpack
+    //   externals (see webpack.main.config.js). Runtime require() needs
+    //   them on disk; asar.unpack extracts them to app.asar.unpacked/.
+    //   active-win also ships ./bin helper binaries that must stay at
+    //   their path to be exec'd.
     asar: {
-      unpack: '**/node_modules/{ps-list,active-win,@sindresorhus/is-plain-object,pidtree}/**',
+      unpack: '**/{*.node,node_modules/{ps-list,active-win}/**}',
     },
     name: 'Enteam Interview Monitor',
     executableName: 'enteam-interview-monitor',
@@ -66,10 +69,10 @@ module.exports = {
     },
   ],
   plugins: [
-    {
-      name: '@electron-forge/plugin-auto-unpack-natives',
-      config: {},
-    },
+    // plugin-auto-unpack-natives intentionally NOT used here — its
+    // packageAfterCopy hook replaces asar.unpack entirely, clobbering
+    // our explicit pattern above. Native .node files are instead covered
+    // by the **/*.node glob in asar.unpack.
     {
       name: '@electron-forge/plugin-webpack',
       config: {
