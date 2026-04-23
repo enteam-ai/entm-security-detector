@@ -8,10 +8,6 @@ module.exports = {
     executableName: 'enteam-interview-monitor',
     appBundleId: 'com.enteam.interviewmonitor',
     appCategoryType: 'public.app-category.utilities',
-    // Universal binary: single .dmg runs natively on Apple Silicon + Intel Macs
-    osxUniversal: {
-      x64ArchFiles: '*',
-    },
     // Register enteam-interview:// URL scheme at OS level (read by Info.plist on macOS)
     protocols: [
       {
