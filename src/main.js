@@ -1,7 +1,6 @@
 const { app, BrowserWindow, ipcMain, systemPreferences, shell, dialog } = require('electron');
 const path = require('node:path');
 const { scanForHelpers } = require('./detector');
-const { createLocalServer } = require('./server');
 const { createHeartbeatSender } = require('./heartbeat');
 const { createStatusTray } = require('./tray');
 
@@ -16,6 +15,7 @@ let mainWindow = null;
 let tray = null;
 let pollHandle = null;
 let sessionToken = null;
+let backendUrlOverride = null;
 let lastScanResult = null;
 let isQuitting = false;
 
@@ -33,13 +33,16 @@ if (!gotSingleInstanceLock) {
   return;
 }
 
-function parseTokenFromUrl(url) {
-  if (!url) return null;
+function parseDeepLinkParams(url) {
+  if (!url) return { token: null, api: null };
   try {
     const u = new URL(url);
-    return u.searchParams.get('token');
+    return {
+      token: u.searchParams.get('token'),
+      api: u.searchParams.get('api'),
+    };
   } catch {
-    return null;
+    return { token: null, api: null };
   }
 }
 
@@ -50,7 +53,12 @@ function parseDeepLinkFromArgv(argv) {
 }
 
 function applyIncomingDeepLink(url) {
-  const token = parseTokenFromUrl(url);
+  const { token, api } = parseDeepLinkParams(url);
+  if (api) {
+    // Accept the backend URL from the launching UI so the same detector build
+    // works across environments (stg, pre-prod, prod) without rebuilding.
+    backendUrlOverride = api;
+  }
   if (token) {
     sessionToken = token;
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -189,12 +197,8 @@ app.on('open-url', (event, url) => {
   showMainWindow();
 });
 
-const localServer = createLocalServer({
-  getLastScan: () => lastScanResult,
-  getSessionToken: () => sessionToken,
-});
-
 const heartbeat = createHeartbeatSender({
+  getBackendUrl: () => backendUrlOverride,
   getSessionToken: () => sessionToken,
   getLastScan: () => lastScanResult,
   onStatus: ({ ok, consecutiveFailures }) => {
@@ -209,8 +213,6 @@ app.whenReady().then(async () => {
   if (deepLink) applyIncomingDeepLink(deepLink);
 
   await ensureMacScreenRecordingPermission();
-
-  localServer.start();
 
   tray = createStatusTray({
     onShow: showMainWindow,
@@ -246,7 +248,6 @@ app.on('before-quit', async () => {
     pollHandle = null;
   }
   if (heartbeat) heartbeat.stop();
-  await localServer.stop();
 });
 
 app.on('window-all-closed', () => {

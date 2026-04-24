@@ -4,8 +4,14 @@ const HEARTBEAT_INTERVAL_MS = 10_000;
 const HEARTBEAT_TIMEOUT_MS = 5_000;
 const MAX_BACKOFF_MS = 60_000;
 
+/**
+ * Creates a heartbeat sender.
+ * `getBackendUrl` is a getter so the URL can be swapped at runtime (when the
+ * URL scheme launch includes an `api` param pointing at the candidate's
+ * actual environment — stg vs prod vs local).
+ */
 function createHeartbeatSender({
-  backendUrl = DEFAULT_BACKEND_URL,
+  getBackendUrl,
   getSessionToken,
   getLastScan,
   onStatus,
@@ -17,7 +23,8 @@ function createHeartbeatSender({
   async function sendOnce() {
     const token = getSessionToken();
     const scan = getLastScan();
-    if (!token || !scan) return;
+    const backendUrl = (getBackendUrl && getBackendUrl()) || DEFAULT_BACKEND_URL;
+    if (!token || !scan || !backendUrl) return;
 
     const base = backendUrl.replace(/\/$/, '');
     const url = `${base}/api/v1/interview/join/${encodeURIComponent(token)}/heartbeat`;
