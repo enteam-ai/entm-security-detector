@@ -1,7 +1,33 @@
 const { FusesPlugin } = require('@electron-forge/plugin-fuses');
 const { FuseV1Options, FuseVersion } = require('@electron/fuses');
+const fs = require('node:fs');
+const path = require('node:path');
+
+// Packages that webpack marks as externals (see webpack.main.config.js)
+// so they must live on disk at runtime. @electron-forge/plugin-webpack
+// aggressively prunes node_modules inside its packageAfterPrune hook,
+// leaving node_modules/ empty even for externals. User-level hooks in
+// forge.config.js run after all plugin hooks, so we restore the modules
+// here as the last word before asar packaging.
+const RUNTIME_MODULES = ['ps-list', 'active-win'];
 
 module.exports = {
+  hooks: {
+    packageAfterPrune: async (_config, buildPath) => {
+      const srcRoot = __dirname;
+      for (const name of RUNTIME_MODULES) {
+        const src = path.join(srcRoot, 'node_modules', name);
+        const dest = path.join(buildPath, 'node_modules', name);
+        if (!fs.existsSync(src)) {
+          throw new Error(
+            `packageAfterPrune: module not found on disk: ${src}. ` +
+              `Did "npm install" run before packaging?`,
+          );
+        }
+        fs.cpSync(src, dest, { recursive: true, force: true });
+      }
+    },
+  },
   packagerConfig: {
     // Combined unpack pattern:
     // - **/*.node — any native addon (replaces plugin-auto-unpack-natives,
