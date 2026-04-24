@@ -1,5 +1,5 @@
 const BLOCKLIST = [
-  { needle: 'parakeet',  display: 'Parakeet AI' },
+  { needle: 'pmodule',   display: 'Parakeet AI' },
   { needle: 'cluely',    display: 'Cluely' },
   { needle: 'otter',     display: 'Otter.ai' },
   { needle: 'granola',   display: 'Granola' },
