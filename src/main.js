@@ -48,8 +48,28 @@ function parseDeepLinkParams(url) {
 
 function parseDeepLinkFromArgv(argv) {
   if (!Array.isArray(argv)) return null;
-  const deepLink = argv.find((arg) => typeof arg === 'string' && arg.startsWith(`${PROTOCOL}://`));
-  return deepLink || null;
+  const idx = argv.findIndex(
+    (arg) => typeof arg === 'string' && arg.startsWith(`${PROTOCOL}://`),
+  );
+  if (idx < 0) return null;
+
+  // Windows quirk: the protocol-handler registration may not quote %1, so
+  // the URL gets split across argv elements on `&`. Re-stitch by absorbing
+  // any subsequent argv elements that look like URL query params (key=value).
+  // Without this, `api=...` lands as its own argv and gets silently lost,
+  // and the detector falls back to its default backend URL — which is
+  // exactly the "heartbeats never reach stg" failure mode.
+  let url = argv[idx];
+  for (let i = idx + 1; i < argv.length; i++) {
+    const next = argv[i];
+    if (typeof next !== 'string') break;
+    if (/^[a-zA-Z_][a-zA-Z0-9_-]*=/.test(next)) {
+      url += '&' + next;
+    } else {
+      break;
+    }
+  }
+  return url;
 }
 
 function applyIncomingDeepLink(url) {
