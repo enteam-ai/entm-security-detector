@@ -1,6 +1,6 @@
 const DEFAULT_BACKEND_URL =
   process.env.ENTEAM_BACKEND_URL || 'https://api.enteam-hiring.com';
-const HEARTBEAT_INTERVAL_MS = 10_000;
+const HEARTBEAT_INTERVAL_MS = 5_000;
 const HEARTBEAT_TIMEOUT_MS = 5_000;
 const MAX_BACKOFF_MS = 60_000;
 
