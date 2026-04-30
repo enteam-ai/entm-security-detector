@@ -10,11 +10,7 @@ const BLOCKLIST = [
   { needle: 'rewind',    display: 'Rewind.ai' },
   { needle: 'readai',    display: 'Read AI' },
   { needle: 'read.ai',   display: 'Read AI' },
-
-  // --- TEST-ONLY ENTRIES (remove before demo) ---
-  { needle: 'notepad',   display: '[TEST] Notepad' },
-  { needle: 'claude',    display: '[TEST] Claude' },
-  { needle: 'calc',      display: '[TEST] Calculator' },
+  { needle: 'claude',    display: 'Claude' },
 ];
 
 // ps-list@7 and active-win@7 are CommonJS — required directly so webpack
